@@ -17,8 +17,8 @@ define(['pex/geom/Vec3', 'pex/utils/MathUtils'], function(Vec3, MathUtils) {
     this.desired = new Vec3(0, 0, 0);
     this.target = new Vec3(0, 0, 0);
     this.maxSpeed = 0.15;
-    this.maxForce = 0.15;
-    this.targetRadius = 2;
+    this.maxForce = 0.05;
+    this.targetRadius = 1;
     this.boundingBox = boundingBox;
   }
 

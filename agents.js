@@ -32,7 +32,8 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
     init: function() {
       Time.verbose = true;
 
-      this.boundingBox = BoundingBox.fromPositionSize(new Vec3(0,0,0), new Vec3(10,10,10));
+      this.boundingBox = BoundingBox.fromPositionSize(new Vec3(0,0,0), new Vec3(15,15,15));
+      console.log(this.boundingBox);
       this.boundingBoxHelper = new BoundingBoxHelper(this.boundingBox);
 
       this.agents = FuncUtils.seq(0, this.numAgents).map(function(i) {
@@ -43,7 +44,9 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
       }.bind(this));
 
       this.camera = new pex.scene.PerspectiveCamera(60, this.width/this.height);
-      this.arcball = new pex.scene.Arcball(this, this.camera, 5);
+      this.arcball = new pex.scene.Arcball(this, this.camera, 20);
+      this.arcball.target = new Vec3(0,0,0);
+      this.arcball.updateCamera();
       this.framerate(30);
 
       var bodyCube = new Cube(0.2, 0.2, 0.4);
@@ -75,10 +78,11 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
 
       this.glx.clearColorAndDepth(Color.Black).enableDepthWriteAndRead().cullFace(false);
 
-      if (!this.mouseDown)
+      if (!this.mouseDown) {
         for(var i=this.agents.length-1; i>0; i--) {
-          this.agents[i].target = this.agents[i-1].position;
+          this.agents[i].target = this.agents[i-1].position.dup();
         }
+      }
       this.agents.forEach(function(agent, i) {
         agent.update();
         agent.rotation = GeomUtils.quatFromDirection(agent.velocity);
