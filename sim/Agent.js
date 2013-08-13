@@ -16,10 +16,11 @@ define(['pex/geom/Vec3', 'pex/utils/MathUtils'], function(Vec3, MathUtils) {
     this.steer = new Vec3(0, 0, 0);
     this.desired = new Vec3(0, 0, 0);
     this.target = new Vec3(0, 0, 0);
-    this.maxSpeed = 0.15;
-    this.maxForce = 0.005;
-    this.targetRadius = 1;
+    this.maxSpeed = 0.4;
+    this.maxForce = 0.01;
+    this.targetRadius = 2;
     this.boundingBox = boundingBox;
+    this.chooseNewTarget = false;
   }
 
   Agent.prototype.update = function() {
@@ -40,7 +41,7 @@ define(['pex/geom/Vec3', 'pex/utils/MathUtils'], function(Vec3, MathUtils) {
     this.desired.normalize();
     if (d < this.targetRadius) {
       this.desired.scale(MathUtils.map(d, 0, this.targetRadius, 0, this.maxSpeed));
-      if (d < this.targetRadius / 4) {
+      if (d < this.targetRadius / 4 && this.chooseNewTarget) {
         this.target = MathUtils.randomVec3InBoundingBox(this.boundingBox);
       }
     }
