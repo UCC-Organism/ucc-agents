@@ -11,9 +11,10 @@ var Mat4 = pex.geom.Mat4;
 var Quat = pex.geom.Quat;
 var Vec3 = pex.geom.Vec3;
 var Time = pex.utils.Time;
+var BoundingBox = pex.geom.BoundingBox;
 
-pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'geom/Pyramid'], 
-  function(FuncUtils, GLX, GeomUtils, Agent, Pyramid) {
+pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'helpers/BoundingBoxHelper'],
+  function(FuncUtils, GLX, GeomUtils, Agent, BoundingBoxHelper) {
   pex.sys.Window.create({
     settings: {
       width: 1280,
@@ -29,11 +30,14 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'ge
     agentSpreadRadius: 15,
     init: function() {
       Time.verbose = true;
+
+      this.boundingBox = BoundingBox.fromPositionSize(new Vec3(0,0,0), new Vec3(10,10,10));
+      this.boundingBoxHelper = new BoundingBoxHelper(this.boundingBox);
+
       this.agents = FuncUtils.seq(0, this.numAgents).map(function(i) {
         var agent = new Agent();
         agent.position.copy(MathUtils.randomVec3().scale(this.agentSpreadRadius));
-        agent.velocity = MathUtils.randomVec3().scale(agent.maxSpeed);
-        //agent.position.z = 0;
+        agent.target = MathUtils.randomVec3InBoundingBox(this.boundingBox);
         return agent;
       }.bind(this));
 
@@ -64,7 +68,6 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'ge
       this.glx.clearColorAndDepth(Color.Black).enableDepthWriteAndRead().cullFace(false);
 
       this.agents.forEach(function(agent, i) {
-        agent.target.asAdd(agent.position, agent.velocity.dup().normalize().scale(2)).add(MathUtils.randomVec3().scale(0.52))
         agent.update();
         agent.rotation = GeomUtils.quatFromDirection(agent.velocity);
       }.bind(this));
@@ -74,6 +77,8 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'ge
 
       this.cube.position = target;
       this.cube.draw(this.camera);
+
+      this.boundingBoxHelper.draw(this.camera);
     }
   });
 })
