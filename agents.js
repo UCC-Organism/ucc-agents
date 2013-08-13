@@ -28,6 +28,7 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
     numAgents: 150,
     agents: [],
     agentSpreadRadius: 15,
+    mouseDown: false,
     init: function() {
       Time.verbose = true;
 
@@ -35,7 +36,7 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
       this.boundingBoxHelper = new BoundingBoxHelper(this.boundingBox);
 
       this.agents = FuncUtils.seq(0, this.numAgents).map(function(i) {
-        var agent = new Agent();
+        var agent = new Agent(this.boundingBox);
         agent.position.copy(MathUtils.randomVec3().scale(this.agentSpreadRadius));
         agent.target = MathUtils.randomVec3InBoundingBox(this.boundingBox);
         return agent;
@@ -47,7 +48,7 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
 
       var bodyCube = new Cube(0.2, 0.2, 0.4);
       var headCube = new Cube(0.21, 0.21, 0.21);
-      var headTransform = new Mat4().translate(0, 0, 0.3);
+      var headTransform = new Mat4().translate(0, 0.2, 0.3);
       GeomUtils.transformVertices(headCube, headTransform);
 
       this.agentBody = new pex.gl.Mesh(bodyCube, new pex.materials.Diffuse({diffuseColor:Color.White}));
@@ -57,6 +58,13 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
 
       this.glx = new GLX();
       this.glx.clearColorAndDepth(Color.Black).enableDepthWriteAndRead().cullFace(false)
+
+      this.on('leftMouseDown', function(e) {
+        this.mouseDown = true;
+      }.bind(this));
+      this.on('leftMouseUp', function(e) {
+        this.mouseDown = false;
+      }.bind(this));
     },
     draw: function() {
       var target = new Vec3(
@@ -67,6 +75,10 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
 
       this.glx.clearColorAndDepth(Color.Black).enableDepthWriteAndRead().cullFace(false);
 
+      if (!this.mouseDown)
+        for(var i=this.agents.length-1; i>0; i--) {
+          this.agents[i].target = this.agents[i-1].position;
+        }
       this.agents.forEach(function(agent, i) {
         agent.update();
         agent.rotation = GeomUtils.quatFromDirection(agent.velocity);
