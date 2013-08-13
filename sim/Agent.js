@@ -17,7 +17,7 @@ define(['pex/geom/Vec3', 'pex/utils/MathUtils'], function(Vec3, MathUtils) {
     this.desired = new Vec3(0, 0, 0);
     this.target = new Vec3(0, 0, 0);
     this.maxSpeed = 0.15;
-    this.maxForce = 0.05;
+    this.maxForce = 0.005;
     this.targetRadius = 1;
     this.boundingBox = boundingBox;
   }
@@ -39,7 +39,7 @@ define(['pex/geom/Vec3', 'pex/utils/MathUtils'], function(Vec3, MathUtils) {
     var d = this.desired.length();
     this.desired.normalize();
     if (d < this.targetRadius) {
-      //this.desired.scale(MathUtils.map(d, 0, this.targetRadius, 0, this.maxSpeed));
+      this.desired.scale(MathUtils.map(d, 0, this.targetRadius, 0, this.maxSpeed));
       if (d < this.targetRadius / 4) {
         this.target = MathUtils.randomVec3InBoundingBox(this.boundingBox);
       }

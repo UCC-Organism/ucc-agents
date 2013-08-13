@@ -32,26 +32,26 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
     init: function() {
       Time.verbose = true;
 
-      this.boundingBox = BoundingBox.fromPositionSize(new Vec3(0,0,0), new Vec3(15,15,15));
+      this.boundingBox = BoundingBox.fromPositionSize(new Vec3(0,0,0), new Vec3(30,15,1));
       console.log(this.boundingBox);
       this.boundingBoxHelper = new BoundingBoxHelper(this.boundingBox);
 
       this.agents = FuncUtils.seq(0, this.numAgents).map(function(i) {
         var agent = new Agent(this.boundingBox);
-        agent.position.copy(MathUtils.randomVec3().scale(this.agentSpreadRadius));
+        agent.position = new Vec3(this.boundingBox.min.x, 0, 0);
         agent.target = MathUtils.randomVec3InBoundingBox(this.boundingBox);
         return agent;
       }.bind(this));
 
       this.camera = new pex.scene.PerspectiveCamera(60, this.width/this.height);
-      this.arcball = new pex.scene.Arcball(this, this.camera, 20);
+      this.arcball = new pex.scene.Arcball(this, this.camera, 17);
       this.arcball.target = new Vec3(0,0,0);
       this.arcball.updateCamera();
       this.framerate(30);
 
       var bodyCube = new Cube(0.2, 0.2, 0.4);
       var headCube = new Cube(0.21, 0.21, 0.21);
-      var headTransform = new Mat4().translate(0, 0.2, 0.3);
+      var headTransform = new Mat4().translate(0, 0.0, 0.3);
       GeomUtils.transformVertices(headCube, headTransform);
 
       this.agentBody = new pex.gl.Mesh(bodyCube, new pex.materials.Diffuse({diffuseColor:Color.White}));
@@ -78,11 +78,6 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
 
       this.glx.clearColorAndDepth(Color.Black).enableDepthWriteAndRead().cullFace(false);
 
-      if (!this.mouseDown) {
-        for(var i=this.agents.length-1; i>0; i--) {
-          this.agents[i].target = this.agents[i-1].position.dup();
-        }
-      }
       this.agents.forEach(function(agent, i) {
         agent.update();
         agent.rotation = GeomUtils.quatFromDirection(agent.velocity);
