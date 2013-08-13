@@ -7,8 +7,13 @@ var Arcball = pex.scene.Arcball;
 var Cube = pex.geom.gen.Cube;
 var hem = pex.geom.hem;
 var Color = pex.color.Color;
+var Mat4 = pex.geom.Mat4;
+var Quat = pex.geom.Quat;
+var Vec3 = pex.geom.Vec3;
+var Time = pex.utils.Time;
 
-pex.require(['utils/FuncUtils', 'utils/GLX', 'sim/Agent', 'geom/Pyramid'], function(FuncUtils, GLX, Agent, Pyramid) {
+pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'geom/Pyramid'], 
+  function(FuncUtils, GLX, GeomUtils, Agent, Pyramid) {
   pex.sys.Window.create({
     settings: {
       width: 1280,
@@ -19,14 +24,14 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'sim/Agent', 'geom/Pyramid'], funct
       fullscreen: Platform.isBrowser,
       center: true
     },
-    numAgents: 50,
+    numAgents: 150,
     agents: [],
     agentSpreadRadius: 15,
     init: function() {
       this.agents = FuncUtils.seq(0, this.numAgents).map(function(i) {
         var agent = new Agent();
         agent.position.copy(MathUtils.randomVec3().scale(this.agentSpreadRadius));
-        agent.position.z = 0;
+        //agent.position.z = 0;
         return agent;
       }.bind(this));
 
@@ -34,23 +39,40 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'sim/Agent', 'geom/Pyramid'], funct
       this.arcball = new pex.scene.Arcball(this, this.camera, 5);
       this.framerate(30);
 
-      var pyramid = hem().fromGeometry(new Pyramid()).toFlatGeometry();
-      pyramid = new Pyramid();
-      pyramid2 = new Pyramid();
-      //this.agentMesh = new pex.gl.Mesh(pyramid, new pex.materials.SolidColor(), {useEdges:true});
-      this.agentMesh2 = new pex.gl.Mesh(pyramid2, new pex.materials.Diffuse({wrap:1, ambientColor:Color.Red}));
+      var bodyCube = new Cube(0.2, 0.2, 0.4);
+      var headCube = new Cube(0.21, 0.21, 0.21);
+      var headTransform = new Mat4().translate(0, 0, 0.3);
+      GeomUtils.transformVertices(headCube, headTransform);
+
+      this.agentBody = new pex.gl.Mesh(bodyCube, new pex.materials.Diffuse({diffuseColor:Color.White}));
+      this.agentHead = new pex.gl.Mesh(headCube, new pex.materials.Diffuse({diffuseColor:Color.Yellow}));
+
+      this.cube = new pex.gl.Mesh(new Cube(0.1), new pex.materials.Diffuse({diffuseColor:Color.Green}));
 
       this.glx = new GLX();
+      this.glx.clearColorAndDepth(Color.Black).enableDepthWriteAndRead().cullFace(false)
     },
     draw: function() {
-      this.agents.forEach(function(agent) {
-        agent.update();
-      })
-      this.glx.clearColorAndDepth().enableDepthWriteAndRead().cullFace(false)
-      //this.agentMesh.drawInstances(this.camera, this.agents);
+      var target = new Vec3(
+        2 * Math.cos(Time.seconds*2),
+        2 * Math.cos(Time.seconds),
+        2 * Math.sin(Time.seconds*2)
+      );
+      var dir = new Vec3();
 
-      this.agentMesh2.draw(this.camera);
-      //this.agentMesh.draw(this.camera);
+      this.glx.clearColorAndDepth(Color.Black).enableDepthWriteAndRead().cullFace(false)
+
+      this.agents.forEach(function(agent) {
+        //agent.update();
+        dir.asSub(target, agent.position);
+        this.agentBody.position = this.agentHead.position = agent.position;
+        this.agentBody.rotation = this.agentHead.rotation = GeomUtils.quatFromDirection(dir);
+        this.agentBody.draw(this.camera);
+        this.agentHead.draw(this.camera);
+      }.bind(this));
+
+      this.cube.position = target;
+      this.cube.draw(this.camera);
     }
   });
 })
