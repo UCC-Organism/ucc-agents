@@ -28,6 +28,7 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'ge
     agents: [],
     agentSpreadRadius: 15,
     init: function() {
+      Time.verbose = true;
       this.agents = FuncUtils.seq(0, this.numAgents).map(function(i) {
         var agent = new Agent();
         agent.position.copy(MathUtils.randomVec3().scale(this.agentSpreadRadius));
@@ -58,18 +59,17 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'ge
         2 * Math.cos(Time.seconds),
         2 * Math.sin(Time.seconds*2)
       );
-      var dir = new Vec3();
 
       this.glx.clearColorAndDepth(Color.Black).enableDepthWriteAndRead().cullFace(false)
 
       this.agents.forEach(function(agent) {
-        //agent.update();
-        dir.asSub(target, agent.position);
-        this.agentBody.position = this.agentHead.position = agent.position;
-        this.agentBody.rotation = this.agentHead.rotation = GeomUtils.quatFromDirection(dir);
-        this.agentBody.draw(this.camera);
-        this.agentHead.draw(this.camera);
+        agent.target = target;
+        agent.update();
+        agent.rotation = GeomUtils.quatFromDirection(agent.velocity);
       }.bind(this));
+
+      this.agentBody.drawInstances(this.camera, this.agents);
+      this.agentHead.drawInstances(this.camera, this.agents);
 
       this.cube.position = target;
       this.cube.draw(this.camera);
