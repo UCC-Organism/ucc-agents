@@ -16,11 +16,12 @@ define(['pex/geom/Vec3'], function(Vec3) {
     this.steer = new Vec3(0, 0, 0);
     this.desired = new Vec3(0, 0, 0);
     this.target = new Vec3(0, 0, 0);
-    this.maxSpeed = 1;
-    this.maxForce = 1;
+    this.maxSpeed = 0.1;
+    this.maxForce = 0.1;
   }
 
   Agent.prototype.update = function() {
+    this.seek(this.target);
     this.velocity.add(this.acceleration);
     this.velocity.limit(this.maxSpeed);
     this.position.add(this.velocity);
@@ -34,7 +35,7 @@ define(['pex/geom/Vec3'], function(Vec3) {
   Agent.prototype.seek = function(target) {
     this.desired.asSub(target, this.position).normalize().scale(this.maxSpeed);
     this.steer.asSub(this.desired, this.velocity);
-    this.steer.limit(maxForce);
+    this.steer.limit(this.maxForce);
     this.applyForce(this.steer);
   }
 

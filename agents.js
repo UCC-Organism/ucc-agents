@@ -18,11 +18,12 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'sim/Agent'], function(FuncUtils, G
     },
     numAgents: 50,
     agents: [],
-    agentSpreadRadius: 5,
+    agentSpreadRadius: 15,
     init: function() {
       this.agents = FuncUtils.seq(0, this.numAgents).map(function(i) {
         var agent = new Agent();
         agent.position.copy(MathUtils.randomVec3().scale(this.agentSpreadRadius));
+        agent.position.z = 0;
         return agent;
       }.bind(this));
 
@@ -35,6 +36,9 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'sim/Agent'], function(FuncUtils, G
       this.glx = new GLX();
     },
     draw: function() {
+      this.agents.forEach(function(agent) {
+        agent.update();
+      })
       this.glx.clearColorAndDepth().enableDepthWriteAndRead()
       this.agentMesh.drawInstances(this.camera, this.agents);
     }
