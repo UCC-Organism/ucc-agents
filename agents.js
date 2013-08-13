@@ -32,6 +32,7 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'ge
       this.agents = FuncUtils.seq(0, this.numAgents).map(function(i) {
         var agent = new Agent();
         agent.position.copy(MathUtils.randomVec3().scale(this.agentSpreadRadius));
+        agent.velocity = MathUtils.randomVec3().scale(agent.maxSpeed);
         //agent.position.z = 0;
         return agent;
       }.bind(this));
@@ -60,10 +61,10 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'ge
         2 * Math.sin(Time.seconds*2)
       );
 
-      this.glx.clearColorAndDepth(Color.Black).enableDepthWriteAndRead().cullFace(false)
+      this.glx.clearColorAndDepth(Color.Black).enableDepthWriteAndRead().cullFace(false);
 
-      this.agents.forEach(function(agent) {
-        agent.target = target;
+      this.agents.forEach(function(agent, i) {
+        agent.target.asAdd(agent.position, agent.velocity.dup().normalize().scale(2)).add(MathUtils.randomVec3().scale(0.52))
         agent.update();
         agent.rotation = GeomUtils.quatFromDirection(agent.velocity);
       }.bind(this));

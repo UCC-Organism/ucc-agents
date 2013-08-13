@@ -18,7 +18,7 @@ define(['pex/geom/Vec3', 'pex/utils/MathUtils'], function(Vec3, MathUtils) {
     this.target = new Vec3(0, 0, 0);
     this.maxSpeed = 0.15;
     this.maxForce = 0.15;
-    this.targetRadius = 2.0;
+    this.targetRadius = 0.1;
   }
 
   Agent.prototype.update = function() {
