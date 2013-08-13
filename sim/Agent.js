@@ -16,8 +16,8 @@ define(['pex/geom/Vec3'], function(Vec3) {
     this.steer = new Vec3(0, 0, 0);
     this.desired = new Vec3(0, 0, 0);
     this.target = new Vec3(0, 0, 0);
-    this.maxSpeed = 0.1;
-    this.maxForce = 0.1;
+    this.maxSpeed = 0.05;
+    this.maxForce = 0.05;
   }
 
   Agent.prototype.update = function() {
