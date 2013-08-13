@@ -15,6 +15,12 @@ define(['pex/gl/Context', 'pex/color/Color'], function(Context, Color) {
     return this;
   };
 
+  GLX.prototype.clearDepth = function(color) {
+    var gl = this.gl;
+    gl.clear(gl.DEPTH_BUFFER_BIT);
+    return this;
+  };
+
   GLX.prototype.clearColorAndDepth = function(color) {
     var gl = this.gl;
     color = color || Color.Black;
