@@ -18,7 +18,7 @@ define(['pex/geom/Vec3', 'pex/utils/MathUtils', 'pex/utils/Time'], function(Vec3
     this.target = new Vec3(0, 0, 0);
     this.maxSpeed = 0.4;
     this.maxForce = 0.05;
-    this.friction = 0.0;
+    this.friction = 0.05;
     this.targetRadius = 1;
     this.desiredSeparation = 1;
     this.alignmentDistance = 1;
@@ -29,8 +29,8 @@ define(['pex/geom/Vec3', 'pex/utils/MathUtils', 'pex/utils/Time'], function(Vec3
   Agent.prototype.update = function() {
     this.velocity.addScaled(this.acceleration, Time.delta);
     this.velocity.limit(this.maxSpeed);
-    //this.position.addScaled(this.velocity, Time.delta);
-    //this.velocity.scale(1.0 - this.friction);
+    this.position.addScaled(this.velocity, Time.delta);
+    this.velocity.scale(1.0 - this.friction);
     this.acceleration.scale(0);
   }
 
@@ -44,13 +44,11 @@ define(['pex/geom/Vec3', 'pex/utils/MathUtils', 'pex/utils/Time'], function(Vec3
     this.desired.normalize();
     if (d < this.targetRadius) {
       this.desired.scale(MathUtils.map(d, 0, this.targetRadius, 0, this.maxSpeed));
-      //if (d < this.targetRadius / 4 && this.chooseNewTarget) {
-        //this.target = MathUtils.randomVec3InBoundingBox(this.boundingBox);
-      //}
     }
     else {
       this.desired.scale(d);
     }
+
     this.steer.asSub(this.desired, this.velocity);
     this.steer.limit(this.maxForce);
     this.applyForce(this.steer);

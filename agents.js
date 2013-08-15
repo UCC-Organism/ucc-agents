@@ -74,12 +74,15 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
       this.gui.addLabel('Agents');
       this.gui.addParam('Separation', this, 'agentSeparation', {min:0, max:avatarSize*15});
 
+      console.log(this.agentSeparation * 5);
+
       this.agents = FuncUtils.seq(0, this.numAgents).map(function(i) {
         var agent = new Agent(this.boundingBox);
         agent.maxSpeed = bboxSize.x/5; //fly through whole bounding box in 5s
         agent.maxForce = bboxSize.x/5; //achieve max speed in 1s
         agent.desiredSeparation = this.agentSeparation;
         agent.alignmentDistance = this.agentSeparation * 5;
+        agent.targetRadius = this.agentSeparation * 4;
         agent.position = MathUtils.randomVec3().scale(50);
         agent.velocity = new Vec3(agent.maxSpeed, 0, 0);
         agent.velocity = MathUtils.randomVec3().scale(agent.maxSpeed);
@@ -90,7 +93,7 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
       }.bind(this));
 
       this.camera = new pex.scene.PerspectiveCamera(60, this.width/this.height);
-      this.arcball = new pex.scene.Arcball(this, this.camera, bboxSize.x*0.55/2);
+      this.arcball = new pex.scene.Arcball(this, this.camera, bboxSize.x*0.55);
       this.arcball.target = new Vec3(0,0,0);
       this.arcball.updateCamera();
       this.arcball.enabled = false;
