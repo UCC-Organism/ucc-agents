@@ -46,7 +46,7 @@ define(['pex/geom/Vec3', 'pex/utils/MathUtils', 'pex/utils/Time'], function(Vec3
       this.desired.scale(MathUtils.map(d, 0, this.targetRadius, 0, this.maxSpeed));
     }
     else {
-      this.desired.scale(d);
+      this.desired.scale(this.maxForce);
     }
 
     this.steer.asSub(this.desired, this.velocity);
