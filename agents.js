@@ -24,7 +24,7 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
   pex.sys.Window.create({
     settings: {
       width: 1280,
-      height: 720,
+      height: 660,
       type: '3d',
       vsync: false,
       multisample: true,
@@ -83,6 +83,7 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
         agent.velocity = new Vec3(agent.maxSpeed, 0, 0);
         agent.offset = MathUtils.randomVec3().scale(5);
         agent.target = MathUtils.randomVec3InBoundingBox(this.boundingBox);
+        agent.rotation = new Quat();
         return agent;
       }.bind(this));
 
@@ -131,7 +132,7 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
         agent.seek(agent.target);
         agent.separate(this.agents);
         agent.update();
-        agent.rotation = GeomUtils.quatFromDirection(agent.velocity);
+        agent.rotation.setQuat(GeomUtils.quatFromDirection(agent.velocity));
       }.bind(this));
 
       this.agentBody.drawInstances(this.camera, this.agents);

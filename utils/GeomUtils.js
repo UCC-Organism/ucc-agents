@@ -1,4 +1,4 @@
-define(['pex/geom/Vec3', 'pex/geom/Quat', 'pex/geom/Mat4'], function(Vec3, Quat, Mat4) {
+define(['pex/geom/Vec3', 'pex/geom/Quat', 'pex/geom/Mat4', 'pex/utils/MathUtils'], function(Vec3, Quat, Mat4, MathUtils) {
   return {
     transformVertices: function(geom, matrix) {
       geom.vertices.forEach(function(v) {
@@ -16,14 +16,19 @@ define(['pex/geom/Vec3', 'pex/geom/Quat', 'pex/geom/Mat4'], function(Vec3, Quat,
       //var q = new Quat().setAxisAngle(rot, -90);
       //return q;
 
-      var dir = direction.dup().normalize();
+      var dir = MathUtils.getTempVec3('dir');
+      dir.copy(direction).normalize();
 
-      var up = new Vec3(0, 1.0, 0);
-      var right = Vec3.create().asCross(up, dir);
-      up = Vec3.create().asCross(dir, right);
+      var up = MathUtils.getTempVec3('up');
+      up.set(0, 1, 0);
+
+      var right = MathUtils.getTempVec3('right');
+      right.asCross(up, dir);
+      up.asCross(dir, right);
       right.normalize();
       up.normalize();
-      var m = new Mat4();
+
+      var m = MathUtils.getTempMat4('m');
       m.set4x4r(
         right.x, right.y, right.z, 0,
         up.x, up.y, up.z, 0,
@@ -32,7 +37,7 @@ define(['pex/geom/Vec3', 'pex/geom/Quat', 'pex/geom/Mat4'], function(Vec3, Quat,
       );
 
       // Step 3. Build a quaternion from the matrix
-      var q = new Quat();
+      var q = MathUtils.getTempQuat('q');
       q.w = Math.sqrt(1.0 + m.a11 + m.a22 + m.a33) / 2.0;
       var dfWScale = q.w * 4.0;
       //q.x = ((m.a32 - m.a23) / dfWScale);

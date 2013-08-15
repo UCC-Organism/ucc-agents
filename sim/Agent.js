@@ -56,13 +56,14 @@ define(['pex/geom/Vec3', 'pex/utils/MathUtils', 'pex/utils/Time'], function(Vec3
   }
 
   Agent.prototype.separate = function(agents) {
-    var sum = new Vec3(0, 0, 0);
+    var sum = MathUtils.getTempVec3('sum');
+    var diff = MathUtils.getTempVec3('diff');
     var count = 0;
     for(var i=0; i<agents.length; i++) {
       var otherAgent = agents[i];
       var d = otherAgent.position.distance(this.position);
       if (d > 0 && d < this.desiredSeparation) {
-        var diff = this.position.dup().sub(otherAgent.position);
+        diff.asSub(this.position, otherAgent.position);
         diff.normalize();
         sum.add(diff);
         count++;
@@ -71,10 +72,18 @@ define(['pex/geom/Vec3', 'pex/utils/MathUtils', 'pex/utils/Time'], function(Vec3
     if (count > 0) {
       sum.scale(1/count);
       sum.normalize().scale(this.maxForce);
-      var steer = Vec3.create().asSub(sum, this.velocity);
-      steer.limit(this.maxForce);
-      this.applyForce(steer);
+      this.steer.asSub(sum, this.velocity);
+      this.steer.limit(this.maxForce);
+      this.applyForce(this.steer);
     }
+  }
+
+  Agent.prototype.bounceBorders = function() {
+
+  }
+
+  Agent.prototype.align = function(agents) {
+
   }
 
   return Agent;
