@@ -17,17 +17,17 @@ define(['pex/geom/Vec3', 'pex/utils/MathUtils'], function(Vec3, MathUtils) {
     this.desired = new Vec3(0, 0, 0);
     this.target = new Vec3(0, 0, 0);
     this.maxSpeed = 0.4;
-    this.maxForce = 0.01;
-    this.targetRadius = 2;
+    this.maxForce = 0.05;
+    this.targetRadius = 1;
     this.boundingBox = boundingBox;
     this.chooseNewTarget = false;
   }
 
   Agent.prototype.update = function() {
-    this.seek(this.target);
     this.velocity.add(this.acceleration);
     this.velocity.limit(this.maxSpeed);
     this.position.add(this.velocity);
+    this.velocity.scale(0.95);
     this.acceleration.scale(0);
   }
 
@@ -41,9 +41,9 @@ define(['pex/geom/Vec3', 'pex/utils/MathUtils'], function(Vec3, MathUtils) {
     this.desired.normalize();
     if (d < this.targetRadius) {
       this.desired.scale(MathUtils.map(d, 0, this.targetRadius, 0, this.maxSpeed));
-      if (d < this.targetRadius / 4 && this.chooseNewTarget) {
-        this.target = MathUtils.randomVec3InBoundingBox(this.boundingBox);
-      }
+      //if (d < this.targetRadius / 4 && this.chooseNewTarget) {
+        //this.target = MathUtils.randomVec3InBoundingBox(this.boundingBox);
+      //}
     }
     else {
       this.desired.scale(this.maxSpeed);
@@ -51,6 +51,29 @@ define(['pex/geom/Vec3', 'pex/utils/MathUtils'], function(Vec3, MathUtils) {
     this.steer.asSub(this.desired, this.velocity);
     this.steer.limit(this.maxForce);
     this.applyForce(this.steer);
+  }
+
+  Agent.prototype.separate = function(agents) {
+    var desiredSeparation = 1;
+    var sum = new Vec3(0, 0, 0);
+    var count = 0;
+    for(var i=0; i<agents.length; i++) {
+      var otherAgent = agents[i];
+      var d = otherAgent.position.distance(this.position);
+      if (d > 0 && d < desiredSeparation) {
+        var diff = this.position.dup().sub(otherAgent.position);
+        diff.normalize();
+        sum.add(diff);
+        count++;
+      }
+    }
+    if (count > 0) {
+      sum.scale(1/count);
+      sum.normalize().scale(this.maxForce);
+      var steer = Vec3.create().asSub(sum, this.velocity);
+      steer.limit(this.maxForce);
+      this.applyForce(steer);
+    }
   }
 
   return Agent;

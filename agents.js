@@ -39,7 +39,7 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
 
       function updateTargets() {
         this.agents.forEach(function(agent) {
-          agent.target.copy(this.target);
+          agent.target = this.target;
         }.bind(this))
       }
 
@@ -50,15 +50,15 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
       }
 
       //anim(this).to({test:1}, 5)
-      var center = new TWEEN.Tween(this.target).to({x:30/2, y:0, z:0}, 5000).delay(1000).start().onUpdate(updateTargets.bind(this)).onComplete(randomizeTarget.bind(this));
-      var top  = new TWEEN.Tween(this.target).to({x:0, y:15/2, z:0}, 5000).delay(5000).onUpdate(updateTargets.bind(this)).onComplete(randomizeTarget.bind(this));
-      var bottom  = new TWEEN.Tween(this.target).to({x:0, y:-15/2, z:0}, 5000).delay(5000).onUpdate(updateTargets.bind(this)).onComplete(randomizeTarget.bind(this));
+      var center = new TWEEN.Tween(this.target).to({x:30/2, y:0, z:0}, 5000).delay(0).start().onUpdate(updateTargets.bind(this)).onComplete(randomizeTarget.bind(this));
+      var top  = new TWEEN.Tween(this.target).to({x:0, y:15/2, z:0}, 5000).delay(3000).onUpdate(updateTargets.bind(this)).onComplete(randomizeTarget.bind(this));
+      var bottom  = new TWEEN.Tween(this.target).to({x:0, y:-15/2, z:0}, 5000).delay(3000).onUpdate(updateTargets.bind(this)).onComplete(randomizeTarget.bind(this));
 
       center.chain(top);
       top.chain(bottom);
       bottom.chain(center);
 
-      this.boundingBox = BoundingBox.fromPositionSize(new Vec3(0,0,0), new Vec3(30,15,15));
+      this.boundingBox = BoundingBox.fromPositionSize(new Vec3(0,0,0), new Vec3(30,15,2));
       console.log(this.boundingBox);
       this.boundingBoxHelper = new BoundingBoxHelper(this.boundingBox);
 
@@ -76,9 +76,9 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
       this.arcball.updateCamera();
       this.framerate(30);
 
-      var bodyCube = new Cube(0.2, 0.2, 0.4);
+      var bodyCube = new Cube(0.2, 0.2, 0.4*0+0.2);
       var headCube = new Cube(0.21, 0.21, 0.21);
-      var headTransform = new Mat4().translate(0, 0.0, 0.3);
+      var headTransform = new Mat4().translate(0, 0.0, 0.3*0);
       GeomUtils.transformVertices(headCube, headTransform);
 
       this.agentBody = new pex.gl.Mesh(bodyCube, new pex.materials.Diffuse({diffuseColor:Color.White}));
@@ -104,6 +104,8 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
 
      this.agents.forEach(function(agent, i) {
         //agent.target = this.target;
+        agent.seek(agent.target);
+        agent.separate(this.agents);
         agent.update();
         agent.rotation = GeomUtils.quatFromDirection(agent.velocity);
       }.bind(this));
