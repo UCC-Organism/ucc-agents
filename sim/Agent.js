@@ -101,5 +101,40 @@ define(['pex/geom/Vec3', 'pex/utils/MathUtils', 'pex/utils/Time'], function(Vec3
 
   }
 
+  Agent.prototype.followPath = function(path, pathWidth) {
+    pathWidth = pathWidth || 1;
+    var predictedVelocity = MathUtils.getTempVec3('predictedVelocity');
+    predictedVelocity.copy(this.velocity).normalize().scale(this.maxSpeed);
+    var predictedPos = MathUtils.getTempVec3('predictedPos');
+    predictedPos.asAdd(this.position, predictedVelocity); //where we could be in 1s
+
+    var start = path.points[0];
+    var end = path.points[1];
+
+    //from start to predicted pos
+    var a = MathUtils.getTempVec3('a');
+    a.asSub(predictedPos, start);
+
+    //segment direction
+    var b = MathUtils.getTempVec3('b');
+    b.asSub(end, start).normalize();
+
+    var d = a.length() * a.dot(b);
+    b.scale(d);
+
+    var normalPoint = MathUtils.getTempVec3('normalPoint');
+    normalPoint.asAdd(start, b);
+
+    if (normalPoint.x < start.x || normalPoint.x > end.x) {
+      normalPoint = end;
+    }
+
+    var distance = predictedPos.distance(normalPoint);
+    if (distance > pathWidth) {
+      this.seek(normalPoint);
+    }
+
+  }
+
   return Agent;
 })
