@@ -43,6 +43,7 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
     agentSeparation: 0,
     agentAlignment: true,
     debug: true,
+    classOn: false,
     init: function() {
       Time.verbose = true;
 
@@ -71,27 +72,27 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
       this.groups = [];
       this.groups.push({
         agents: [],
-        startingPos: new Vec3(this.boundingBox.min.x, 0, 0),
-        target: new Vec3(0, 0, 0),
         color: Color.Red
       });
       this.groups.push({
         agents: [],
-        startingPos: new Vec3(this.boundingBox.max.x, 0, 0),
-        target: new Vec3(0, 0, 0),
-        color: Color.Green
+        color: Color.Red
       });
       this.groups.push({
         agents: [],
-        startingPos: new Vec3(0, this.boundingBox.min.y, 0),
-        target: new Vec3(0, 0, 0),
+        color: Color.Red
+      });
+      this.groups.push({
+        agents: [],
         color: Color.Blue
       });
       this.groups.push({
         agents: [],
-        startingPos: new Vec3(0, this.boundingBox.max.y, 0),
-        target: new Vec3(0, 0, 0),
-        color: Color.Pink
+        color: Color.Blue
+      });
+      this.groups.push({
+        agents: [],
+        color: Color.Green
       });
 
       this.paths = [];
@@ -115,9 +116,21 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
       ]));
 
       this.paths.push(new Path([
-        new Vec3(this.boundingBox.min.x, -bboxSize.y*0.02, 0),
+        new Vec3(this.boundingBox.min.x, -bboxSize.y*0.01, 0),
         new Vec3(this.boundingBox.min.x + bboxSize.x*0.7, -bboxSize.y*0.01, 0),
         new Vec3(this.boundingBox.min.x + bboxSize.x*0.7, -bboxSize.y*0.3, 0),
+      ]));
+
+      this.paths.push(new Path([
+        new Vec3(this.boundingBox.max.x, 0, 0),
+        new Vec3(this.boundingBox.min.x + bboxSize.x*0.7, 0, 0),
+        new Vec3(this.boundingBox.min.x + bboxSize.x*0.7, -bboxSize.y*0.3, 0),
+      ]));
+
+      this.paths.push(new Path([
+        new Vec3(this.boundingBox.min.x, -bboxSize.y*0.01, 0),
+        new Vec3(this.boundingBox.min.x + bboxSize.x*0.6, -bboxSize.y*0.01, 0),
+        new Vec3(this.boundingBox.min.x + bboxSize.x*0.6, bboxSize.y*0.3, 0),
       ]));
 
       this.groups.forEach(function(group, i) {
@@ -132,8 +145,8 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
       top.chain(bottom);
       bottom.chain(center);
 
-      this.agentSeparation = avatarSize * 2;
-      this.agentAlignment = this.agentSeparation * 5;
+      this.agentSeparation = avatarSize * 4;
+      this.agentAlignment = 0;
       this.gui.addLabel('Agents');
       this.gui.addParam('Separation', this, 'agentSeparation', {min:0, max:avatarSize*15});
       this.gui.addParam('Alignmnent', this, 'agentAlignment', {min:0, max:avatarSize*15});
@@ -154,8 +167,11 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
           agent.target = MathUtils.randomVec3InBoundingBox(this.boundingBox);
           agent.rotation = new Quat();
           agent.group = group;
-          agent.path = MathUtils.randomElement(this.paths);
+          //agent.path = MathUtils.randomElement(this.paths);
+          agent.path = this.paths[j];
           agent.position = agent.path.points[0].dup().add(MathUtils.randomVec3());
+          //agent.position = agent.path.points[agent.path.points.length-1].dup().add(MathUtils.randomVec3());
+          //agent.target = agent.path.points[agent.path.points.length-1].dup().add(MathUtils.randomVec3());
           agent.delay = MathUtils.randomFloat(-5, 0);
           this.groups[j].agents.push(agent);
           this.agents.push(agent);
@@ -169,6 +185,9 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
       this.arcball.enabled = false;
       this.gui.addLabel('Camera');
       this.gui.addParam('Arcball', this.arcball, 'enabled');
+      this.gui.addLabel('Agents');
+      this.gui.addParam('Debug', this, 'debug');
+      this.gui.addParam('Class', this, 'classOn');
       this.framerate(30);
 
       var bodyCube = new Cube(avatarSize, avatarSize, avatarSize * 2);
@@ -193,8 +212,9 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
 
       this.on('keyDown', function(e) {
         switch(e.str) {
-          case 'd': this.debug = !this.debug; break;
+          case 'd': this.debug = !this.debug; this.gui.items[0].dirty = true; break;
           case 'r': this.reverse(); break;
+          case 'c': this.classOn = !this.classOn; this.gui.items[0].dirty = true; break;
         }
       }.bind(this))
 
@@ -224,15 +244,26 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
       this.glx.clearColorAndDepth(Color.Black).enableDepthWriteAndRead().cullFace(false);
 
       this.agents.forEach(function(agent, i) {
-        agent.desiredSeparation = this.agentSeparation;
-        agent.alignmentDistance = this.agentAlignment;
+        var separationScale = 1;
         var t = (Time.seconds + agent.delay) * 10 / agent.path.length
         t = MathUtils.clamp(t, 0, 1);
+        separationScale = MathUtils.map(Math.pow(t, 20), 0, 1, 1, 2);
+        agent.desiredSeparation = this.agentSeparation * separationScale;
+        agent.alignmentDistance = this.agentAlignment;
         agent.target = agent.path.getPointAt(t);
-        agent.seek(agent.target);
-        agent.separate(this.agents);
-        //agent.align(this.agents);
-        agent.update();
+        if (!this.classOn) {
+          agent.seek(agent.target);
+          agent.align(this.agents);
+          agent.separate(this.agents);
+          agent.update(true);
+        }
+        else {
+          agent.target = agent.path.getPointAt(t);
+          agent.target.x += 2 * Math.cos(Time.seconds + agent.position.x);
+          agent.target.y += 2 * Math.sin(Time.seconds + agent.position.y);
+          agent.seek(agent.target);
+          agent.update(false);
+        }
 
         agent.rotation.setQuat(GeomUtils.quatFromDirection(agent.velocity));
 

@@ -26,10 +26,10 @@ define(['pex/geom/Vec3', 'pex/utils/MathUtils', 'pex/utils/Time'], function(Vec3
     this.chooseNewTarget = false;
   }
 
-  Agent.prototype.update = function() {
+  Agent.prototype.update = function(move) {
     this.velocity.addScaled(this.acceleration, Time.delta);
     this.velocity.limit(this.maxSpeed);
-    this.position.addScaled(this.velocity, Time.delta);
+    if (move) this.position.addScaled(this.velocity, Time.delta);
     this.velocity.scale(1.0 - this.friction);
     this.acceleration.scale(0);
   }
@@ -72,7 +72,7 @@ define(['pex/geom/Vec3', 'pex/utils/MathUtils', 'pex/utils/Time'], function(Vec3
       sum.scale(1/count);
       sum.normalize().scale(this.maxForce);
       this.steer.asSub(sum, this.velocity);
-      this.steer.limit(this.maxForce);
+      this.steer.limit(this.maxForce * 4);
       this.applyForce(this.steer);
     }
   }
