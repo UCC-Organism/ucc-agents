@@ -56,6 +56,11 @@ define (require) ->
     isClosed: () ->
       @loop
 
+    reverse: () ->
+      @points = @points.reverse()
+      @dirtyLength = true
+
+
     precalculateLength: () ->
       step = 1/@samplesCount
       k = 0

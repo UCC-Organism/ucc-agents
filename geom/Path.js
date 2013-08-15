@@ -61,6 +61,11 @@ define(function(require) {
       return this.loop;
     };
 
+    Path.prototype.reverse = function() {
+      this.points = this.points.reverse();
+      return this.dirtyLength = true;
+    };
+
     Path.prototype.precalculateLength = function() {
       var i, k, len, point, prevPoint, step, totalLength, _i, _j, _ref, _ref1;
 
