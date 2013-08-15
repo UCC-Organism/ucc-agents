@@ -106,9 +106,9 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
       timeline.Timeline.getGlobalInstance().update();
       TWEEN.update();
 
-     this.glx.clearColorAndDepth(Color.Black).enableDepthWriteAndRead().cullFace(false);
+      this.glx.clearColorAndDepth(Color.Black).enableDepthWriteAndRead().cullFace(false);
 
-     this.agents.forEach(function(agent, i) {
+      this.agents.forEach(function(agent, i) {
         agent.seek(agent.target);
         agent.separate(this.agents);
         agent.update();
