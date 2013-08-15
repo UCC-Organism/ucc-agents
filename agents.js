@@ -34,7 +34,7 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
       fullscreen: Platform.isBrowser,
       center: true
     },
-    numAgents: 40,
+    numAgents: 140,
     agents: [],
     agentSpreadRadius: 15,
     mouseDown: false,
@@ -42,6 +42,7 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
     target: new Vec3(0, 0, 0),
     agentSeparation: 0,
     agentAlignment: true,
+    debug: true,
     init: function() {
       Time.verbose = true;
 
@@ -49,7 +50,7 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
 
       function updateTargets() {
         this.agents.forEach(function(agent) {
-          agent.target = this.target;
+          //agent.target = this.target;
         }.bind(this))
       }
 
@@ -60,7 +61,7 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
       }
 
       var bboxCenter = new Vec3(0,0,0);
-      var bboxSize = new Vec3(100, 50, 2);
+      var bboxSize = this.bboxSize = new Vec3(100, 50, 2);
       this.boundingBox = BoundingBox.fromPositionSize(bboxCenter, bboxSize);
       console.log(this.boundingBox)
       this.helpers = [];
@@ -74,7 +75,6 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
         target: new Vec3(0, 0, 0),
         color: Color.Red
       });
-      /*
       this.groups.push({
         agents: [],
         startingPos: new Vec3(this.boundingBox.max.x, 0, 0),
@@ -93,17 +93,36 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
         target: new Vec3(0, 0, 0),
         color: Color.Pink
       });
-      */
 
       this.paths = [];
       this.paths.push(new Path([
         new Vec3(this.boundingBox.min.x, 0, 0),
-        new Vec3(this.boundingBox.min.x + bboxSize.x*0.3, this.boundingBox.min.y*0.3, 0),
-        new Vec3(this.boundingBox.min.x + bboxSize.x*0.6, this.boundingBox.max.y*0.3, 0),
-        new Vec3(this.boundingBox.min.x + bboxSize.x*1.0, 0, 0)
+        new Vec3(this.boundingBox.min.x + bboxSize.x*0.3, 0, 0),
+        new Vec3(this.boundingBox.min.x + bboxSize.x*0.3, bboxSize.y*0.3, 0),
       ]));
 
-      this.helpers.push(new PathHelper(this.paths[0], Color.Red));
+      this.paths.push(new Path([
+        new Vec3(this.boundingBox.max.x, 0, 0),
+        new Vec3(this.boundingBox.min.x + bboxSize.x*0.31, 0, 0),
+        new Vec3(this.boundingBox.min.x + bboxSize.x*0.31, bboxSize.y*0.3, 0),
+      ]));
+
+      this.paths.push(new Path([
+        new Vec3(this.boundingBox.max.x*0.8, this.boundingBox.min.y, 0),
+        new Vec3(this.boundingBox.max.x*0.8, -bboxSize.y*0.02, 0),
+        new Vec3(this.boundingBox.min.x + bboxSize.x*0.305, -bboxSize.y*0.02, 0),
+        new Vec3(this.boundingBox.min.x + bboxSize.x*0.305, bboxSize.y*0.25, 0)
+      ]));
+
+      this.paths.push(new Path([
+        new Vec3(this.boundingBox.min.x, -bboxSize.y*0.02, 0),
+        new Vec3(this.boundingBox.min.x + bboxSize.x*0.7, -bboxSize.y*0.01, 0),
+        new Vec3(this.boundingBox.min.x + bboxSize.x*0.7, -bboxSize.y*0.3, 0),
+      ]));
+
+      this.groups.forEach(function(group, i) {
+        this.helpers.push(new PathHelper(this.paths[i], group.color));
+      }.bind(this))
 
       var center = new TWEEN.Tween(this.target).to({x:bboxSize.x/2, y:0, z:0}, 5000).delay(0).start().onUpdate(updateTargets.bind(this)).onComplete(randomizeTarget.bind(this));
       var top  = new TWEEN.Tween(this.target).to({x:0, y:bboxSize.y/2, z:0}, 5000).delay(3000).onUpdate(updateTargets.bind(this)).onComplete(randomizeTarget.bind(this));
@@ -127,14 +146,17 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
           agent.maxForce = bboxSize.x/5; //achieve max speed in 1s
           agent.desiredSeparation = this.agentSeparation;
           agent.alignmentDistance = this.agentAlignment;
-          agent.targetRadius = this.agentSeparation * 0.5;
+          agent.targetRadius = this.agentSeparation * 0.05;
           agent.friction = 0.05;
-          agent.position = MathUtils.randomVec3().scale(bboxSize.x/10).add(group.startingPos);
+          //agent.position = MathUtils.randomVec3().scale(bboxSize.x/10).add(group.startingPos);
           agent.velocity = MathUtils.randomVec3().scale(agent.maxSpeed);
           agent.offset = MathUtils.randomVec3().scale(5);
           agent.target = MathUtils.randomVec3InBoundingBox(this.boundingBox);
           agent.rotation = new Quat();
           agent.group = group;
+          agent.path = MathUtils.randomElement(this.paths);
+          agent.position = agent.path.points[0].dup().add(MathUtils.randomVec3());
+          agent.delay = MathUtils.randomFloat(-5, 0);
           this.groups[j].agents.push(agent);
           this.agents.push(agent);
         }
@@ -169,9 +191,26 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
         this.mouseDown = false;
       }.bind(this));
 
+      this.on('keyDown', function(e) {
+        switch(e.str) {
+          case 'd': this.debug = !this.debug; break;
+          case 'r': this.reverse(); break;
+        }
+      }.bind(this))
+
       var targetCube = new Cube(avatarSize, avatarSize, avatarSize);
       targetCube.computeEdges();
       this.targetCubeMesh = new Mesh(targetCube, new SolidColor({color:Color.Yellow}), {useEdges:true, primitiveType:this.gl.LINES});
+
+      //console.log(this.paths[0].points[0], this.paths[0].getPointAt(0.5))
+      //console.log(this.paths[0].points[this.paths[0].points.length-1], this.paths[0].getPointAt(1))
+    },
+    reverse: function() {
+      Time.seconds = 0;
+      Time.totalTime = 0;
+      this.paths.forEach(function(path) {
+        path.reverse();
+      })
     },
     draw: function() {
       timeline.Timeline.getGlobalInstance().update();
@@ -187,20 +226,25 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
       this.agents.forEach(function(agent, i) {
         agent.desiredSeparation = this.agentSeparation;
         agent.alignmentDistance = this.agentAlignment;
-        //agent.seek(agent.target);
-        agent.followPath(this.paths[0], this.agentSeparation/2);
+        var t = (Time.seconds + agent.delay) * 10 / agent.path.length
+        t = MathUtils.clamp(t, 0, 1);
+        agent.target = agent.path.getPointAt(t);
+        agent.seek(agent.target);
         agent.separate(this.agents);
         //agent.align(this.agents);
         agent.update();
+
         agent.rotation.setQuat(GeomUtils.quatFromDirection(agent.velocity));
 
-        this.targetCubeMesh.material.uniforms.color = Color.Green;
-        this.targetCubeMesh.position = agent.predictedPos;
-        this.targetCubeMesh.draw(this.camera);
+        if (this.debug) {
+          this.targetCubeMesh.material.uniforms.color = Color.Green;
+          this.targetCubeMesh.position = agent.target;
+          this.targetCubeMesh.draw(this.camera);
+        }
 
-        this.targetCubeMesh.material.uniforms.color = Color.Yellow;
-        this.targetCubeMesh.position = agent.closestNormalPoint;
-        this.targetCubeMesh.draw(this.camera);
+        //this.targetCubeMesh.material.uniforms.color = Color.Yellow;
+        //this.targetCubeMesh.position = agent.closestNormalPoint;
+        //this.targetCubeMesh.draw(this.camera);
       }.bind(this));
 
       for(var j=0; j<this.groups.length; j++) {
@@ -210,11 +254,13 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
         this.agentHead.drawInstances(this.camera, group.agents);
       }
 
-      this.cube.position = this.target;
-      this.cube.draw(this.camera);
+      //this.cube.position = this.target;
+      //this.cube.draw(this.camera);
 
-      for(var i=0; i<this.helpers.length; i++) {
-        this.helpers[i].draw(this.camera);
+      if (this.debug) {
+        for(var i=0; i<this.helpers.length; i++) {
+          this.helpers[i].draw(this.camera);
+        }
       }
 
       this.gui.draw();
