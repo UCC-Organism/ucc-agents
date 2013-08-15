@@ -104,35 +104,54 @@ define(['pex/geom/Vec3', 'pex/utils/MathUtils', 'pex/utils/Time'], function(Vec3
   Agent.prototype.followPath = function(path, pathWidth) {
     pathWidth = pathWidth || 1;
     var predictedVelocity = MathUtils.getTempVec3('predictedVelocity');
-    predictedVelocity.copy(this.velocity).normalize().scale(this.maxSpeed);
+    predictedVelocity.copy(this.velocity).normalize().scale(this.maxSpeed / 2);
     var predictedPos = MathUtils.getTempVec3('predictedPos');
-    predictedPos.asAdd(this.position, predictedVelocity); //where we could be in 1s
+    predictedPos.asAdd(this.position, predictedVelocity); //where we could be in 0.25s
 
-    var start = path.points[0];
-    var end = path.points[1];
+    var closestNormalPoint = MathUtils.getTempVec3('closestNormalPoint');
+    var closestNormalPointDistance = -1;
 
-    //from start to predicted pos
-    var a = MathUtils.getTempVec3('a');
-    a.asSub(predictedPos, start);
+    for(var i=0; i<path.points.length-1; i++) {
+      var start = path.points[i];
+      var end = path.points[i+1];
 
-    //segment direction
-    var b = MathUtils.getTempVec3('b');
-    b.asSub(end, start).normalize();
+      //if (i == 0) continue;
 
-    var d = a.length() * a.dot(b);
-    b.scale(d);
+      var a = MathUtils.getTempVec3('a');
+      var b = MathUtils.getTempVec3('b');
+      var normalPoint = MathUtils.getTempVec3('normalPoint');
 
-    var normalPoint = MathUtils.getTempVec3('normalPoint');
-    normalPoint.asAdd(start, b);
+      //from start to predicted pos
+      a.asSub(predictedPos, start);
 
-    if (normalPoint.x < start.x || normalPoint.x > end.x) {
-      normalPoint = end;
+      //segment direction
+      b.asSub(end, start).normalize();
+
+      b.scale(a.dot(b));
+
+      normalPoint.asAdd(start, b);
+
+      if (normalPoint.x < start.x) {
+        normalPoint = start;
+      }
+      if (normalPoint.x > end.x) {
+        normalPoint = end;
+      }
+
+      var distance = predictedPos.distance(normalPoint);
+
+      if (distance < closestNormalPointDistance || closestNormalPointDistance == -1) {
+        closestNormalPoint.copy(normalPoint);
+        closestNormalPointDistance = distance;
+      }
     }
 
-    var distance = predictedPos.distance(normalPoint);
-    if (distance > pathWidth) {
-      this.seek(normalPoint);
-    }
+    //if (closestNormalPointDistance > pathWidth) {
+      this.seek(closestNormalPoint);
+    //}
+
+    this.closestNormalPoint = closestNormalPoint;
+    this.predictedPos = predictedPos;
 
   }
 

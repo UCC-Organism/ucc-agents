@@ -15,6 +15,8 @@ var Quat = pex.geom.Quat;
 var Time = pex.utils.Time;
 var BoundingBox = pex.geom.BoundingBox;
 var GUI = pex.gui.GUI;
+var SolidColor = pex.materials.SolidColor;
+var Mesh = pex.gl.Mesh;
 
 pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'helpers/BoundingBoxHelper', 'lib/timeline', 'lib/TWEEN',
   'geom/Path', 'helpers/PathHelper'],
@@ -32,7 +34,7 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
       fullscreen: Platform.isBrowser,
       center: true
     },
-    numAgents: 120,
+    numAgents: 40,
     agents: [],
     agentSpreadRadius: 15,
     mouseDown: false,
@@ -72,6 +74,7 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
         target: new Vec3(0, 0, 0),
         color: Color.Red
       });
+      /*
       this.groups.push({
         agents: [],
         startingPos: new Vec3(this.boundingBox.max.x, 0, 0),
@@ -90,12 +93,13 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
         target: new Vec3(0, 0, 0),
         color: Color.Pink
       });
+      */
 
       this.paths = [];
       this.paths.push(new Path([
         new Vec3(this.boundingBox.min.x, 0, 0),
-        new Vec3(this.boundingBox.min.x + bboxSize.x*0.3, this.boundingBox.min.y, 0),
-        new Vec3(this.boundingBox.min.x + bboxSize.x*0.6, this.boundingBox.max.y, 0),
+        new Vec3(this.boundingBox.min.x + bboxSize.x*0.3, this.boundingBox.min.y*0.3, 0),
+        new Vec3(this.boundingBox.min.x + bboxSize.x*0.6, this.boundingBox.max.y*0.3, 0),
         new Vec3(this.boundingBox.min.x + bboxSize.x*1.0, 0, 0)
       ]));
 
@@ -119,13 +123,13 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
         var group = this.groups[j];
         for(var i=0; i<this.numAgents/4; i++) {
           var agent = new Agent(this.boundingBox);
-          agent.maxSpeed = bboxSize.x/10; //fly through whole bounding box in 5s
-          agent.maxForce = bboxSize.x/10; //achieve max speed in 1s
+          agent.maxSpeed = bboxSize.x/5; //fly through whole bounding box in 5s
+          agent.maxForce = bboxSize.x/5; //achieve max speed in 1s
           agent.desiredSeparation = this.agentSeparation;
           agent.alignmentDistance = this.agentAlignment;
-          agent.targetRadius = this.agentSeparation * 4;
+          agent.targetRadius = this.agentSeparation * 0.5;
+          agent.friction = 0.05;
           agent.position = MathUtils.randomVec3().scale(bboxSize.x/10).add(group.startingPos);
-          agent.velocity = new Vec3(agent.maxSpeed, 0, 0);
           agent.velocity = MathUtils.randomVec3().scale(agent.maxSpeed);
           agent.offset = MathUtils.randomVec3().scale(5);
           agent.target = MathUtils.randomVec3InBoundingBox(this.boundingBox);
@@ -164,6 +168,10 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
       this.on('leftMouseUp', function(e) {
         this.mouseDown = false;
       }.bind(this));
+
+      var targetCube = new Cube(avatarSize, avatarSize, avatarSize);
+      targetCube.computeEdges();
+      this.targetCubeMesh = new Mesh(targetCube, new SolidColor({color:Color.Yellow}), {useEdges:true, primitiveType:this.gl.LINES});
     },
     draw: function() {
       timeline.Timeline.getGlobalInstance().update();
@@ -179,11 +187,20 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
       this.agents.forEach(function(agent, i) {
         agent.desiredSeparation = this.agentSeparation;
         agent.alignmentDistance = this.agentAlignment;
-        agent.seek(agent.target);
+        //agent.seek(agent.target);
+        agent.followPath(this.paths[0], this.agentSeparation/2);
         agent.separate(this.agents);
-        agent.align(this.agents);
+        //agent.align(this.agents);
         agent.update();
         agent.rotation.setQuat(GeomUtils.quatFromDirection(agent.velocity));
+
+        this.targetCubeMesh.material.uniforms.color = Color.Green;
+        this.targetCubeMesh.position = agent.predictedPos;
+        this.targetCubeMesh.draw(this.camera);
+
+        this.targetCubeMesh.material.uniforms.color = Color.Yellow;
+        this.targetCubeMesh.position = agent.closestNormalPoint;
+        this.targetCubeMesh.draw(this.camera);
       }.bind(this));
 
       for(var j=0; j<this.groups.length; j++) {
