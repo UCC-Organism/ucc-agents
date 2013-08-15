@@ -12,6 +12,7 @@ var Quat = pex.geom.Quat;
 var Vec3 = pex.geom.Vec3;
 var Time = pex.utils.Time;
 var BoundingBox = pex.geom.BoundingBox;
+var GUI = pex.gui.GUI;
 
 pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'helpers/BoundingBoxHelper', 'lib/timeline', 'lib/TWEEN'],
   function(FuncUtils, GLX, GeomUtils, Agent, BoundingBoxHelper, timeline, TWEEN) {
@@ -34,8 +35,11 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
     mouseDown: false,
     test: 0,
     target: new Vec3(0, 0, 0),
+    agentSeparation: 0,
     init: function() {
       Time.verbose = true;
+
+      this.gui = new GUI(this);
 
       function updateTargets() {
         this.agents.forEach(function(agent) {
@@ -64,11 +68,15 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
       top.chain(bottom);
       bottom.chain(center);
 
+      this.agentSeparation = avatarSize * 2;
+      this.gui.addLabel('Agents');
+      this.gui.addParam('Separation', this, 'agentSeparation', {min:0, max:avatarSize*15});
+
       this.agents = FuncUtils.seq(0, this.numAgents).map(function(i) {
         var agent = new Agent(this.boundingBox);
         agent.maxSpeed = bboxSize.x/5; //fly through whole bounding box in 5s
         agent.maxForce = bboxSize.x/5; //achieve max speed in 1s
-        agent.desiredSeparation = avatarSize * 2;
+        agent.desiredSeparation = this.agentSeparation;
         agent.position = MathUtils.randomVec3();
         agent.velocity = new Vec3(agent.maxSpeed, 0, 0);
         agent.offset = MathUtils.randomVec3().scale(5);
@@ -122,6 +130,8 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
       this.cube.draw(this.camera);
 
       this.boundingBoxHelper.draw(this.camera);
+
+      this.gui.draw();
     }
   });
 })
