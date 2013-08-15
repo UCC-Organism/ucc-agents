@@ -16,8 +16,9 @@ var Time = pex.utils.Time;
 var BoundingBox = pex.geom.BoundingBox;
 var GUI = pex.gui.GUI;
 
-pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'helpers/BoundingBoxHelper', 'lib/timeline', 'lib/TWEEN'],
-  function(FuncUtils, GLX, GeomUtils, Agent, BoundingBoxHelper, timeline, TWEEN) {
+pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'helpers/BoundingBoxHelper', 'lib/timeline', 'lib/TWEEN',
+  'geom/Path', 'helpers/PathHelper'],
+  function(FuncUtils, GLX, GeomUtils, Agent, BoundingBoxHelper, timeline, TWEEN, Path, PathHelper) {
 
   anim = timeline.anim
 
@@ -59,8 +60,9 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
       var bboxCenter = new Vec3(0,0,0);
       var bboxSize = new Vec3(100, 50, 2);
       this.boundingBox = BoundingBox.fromPositionSize(bboxCenter, bboxSize);
-      console.log(this.boundingBox);
-      this.boundingBoxHelper = new BoundingBoxHelper(this.boundingBox);
+      console.log(this.boundingBox)
+      this.helpers = [];
+      this.helpers.push(new BoundingBoxHelper(this.boundingBox));
       var avatarSize = bboxSize.x/150;
 
       this.groups = [];
@@ -89,6 +91,16 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
         color: Color.Pink
       });
 
+      this.paths = [];
+      this.paths.push(new Path([
+        new Vec3(this.boundingBox.min.x, 0, 0),
+        new Vec3(this.boundingBox.min.x + bboxSize.x*0.3, this.boundingBox.min.y, 0),
+        new Vec3(this.boundingBox.min.x + bboxSize.x*0.6, this.boundingBox.max.y, 0),
+        new Vec3(this.boundingBox.min.x + bboxSize.x*1.0, 0, 0)
+      ]));
+
+      this.helpers.push(new PathHelper(this.paths[0], Color.Red));
+
       var center = new TWEEN.Tween(this.target).to({x:bboxSize.x/2, y:0, z:0}, 5000).delay(0).start().onUpdate(updateTargets.bind(this)).onComplete(randomizeTarget.bind(this));
       var top  = new TWEEN.Tween(this.target).to({x:0, y:bboxSize.y/2, z:0}, 5000).delay(3000).onUpdate(updateTargets.bind(this)).onComplete(randomizeTarget.bind(this));
       var bottom  = new TWEEN.Tween(this.target).to({x:0, y:-bboxSize.y/2, z:0}, 5000).delay(3000).onUpdate(updateTargets.bind(this)).onComplete(randomizeTarget.bind(this));
@@ -107,8 +119,8 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
         var group = this.groups[j];
         for(var i=0; i<this.numAgents/4; i++) {
           var agent = new Agent(this.boundingBox);
-          agent.maxSpeed = bboxSize.x/5; //fly through whole bounding box in 5s
-          agent.maxForce = bboxSize.x/5; //achieve max speed in 1s
+          agent.maxSpeed = bboxSize.x/10; //fly through whole bounding box in 5s
+          agent.maxForce = bboxSize.x/10; //achieve max speed in 1s
           agent.desiredSeparation = this.agentSeparation;
           agent.alignmentDistance = this.agentAlignment;
           agent.targetRadius = this.agentSeparation * 4;
@@ -184,7 +196,9 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
       this.cube.position = this.target;
       this.cube.draw(this.camera);
 
-      this.boundingBoxHelper.draw(this.camera);
+      for(var i=0; i<this.helpers.length; i++) {
+        this.helpers[i].draw(this.camera);
+      }
 
       this.gui.draw();
     }
