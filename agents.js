@@ -90,7 +90,7 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
       }.bind(this));
 
       this.camera = new pex.scene.PerspectiveCamera(60, this.width/this.height);
-      this.arcball = new pex.scene.Arcball(this, this.camera, bboxSize.x*0.55);
+      this.arcball = new pex.scene.Arcball(this, this.camera, bboxSize.x*0.55/2);
       this.arcball.target = new Vec3(0,0,0);
       this.arcball.updateCamera();
       this.arcball.enabled = false;
