@@ -90,6 +90,9 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
       this.arcball = new pex.scene.Arcball(this, this.camera, bboxSize.x*0.55);
       this.arcball.target = new Vec3(0,0,0);
       this.arcball.updateCamera();
+      this.arcball.enabled = false;
+      this.gui.addLabel('Camera');
+      this.gui.addParam('Arcball', this.arcball, 'enabled');
       this.framerate(30);
 
       var bodyCube = new Cube(avatarSize, avatarSize, avatarSize * 2);
