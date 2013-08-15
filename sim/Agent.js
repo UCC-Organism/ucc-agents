@@ -21,6 +21,7 @@ define(['pex/geom/Vec3', 'pex/utils/MathUtils', 'pex/utils/Time'], function(Vec3
     this.friction = 0.0;
     this.targetRadius = 1;
     this.desiredSeparation = 1;
+    this.alignmentDistance = 1;
     this.boundingBox = boundingBox;
     this.chooseNewTarget = false;
   }
@@ -28,8 +29,8 @@ define(['pex/geom/Vec3', 'pex/utils/MathUtils', 'pex/utils/Time'], function(Vec3
   Agent.prototype.update = function() {
     this.velocity.addScaled(this.acceleration, Time.delta);
     this.velocity.limit(this.maxSpeed);
-    this.position.addScaled(this.velocity, Time.delta);
-    this.velocity.scale(1.0 - this.friction);
+    //this.position.addScaled(this.velocity, Time.delta);
+    //this.velocity.scale(1.0 - this.friction);
     this.acceleration.scale(0);
   }
 
@@ -78,11 +79,27 @@ define(['pex/geom/Vec3', 'pex/utils/MathUtils', 'pex/utils/Time'], function(Vec3
     }
   }
 
-  Agent.prototype.bounceBorders = function() {
-
+  Agent.prototype.align = function(agents) {
+    var sum = MathUtils.getTempVec3('sum');
+    var count = 0;
+    for(var i=0; i<agents.length; i++) {
+      var otherAgent = agents[i];
+      var d = otherAgent.position.distance(this.position);
+      if (d > 0 && d < this.alignmentDistance) {
+        sum.add(otherAgent.velocity);
+        count++;
+      }
+    }
+    if (count > 0) {
+      sum.scale(1/count);
+      sum.normalize().scale(this.maxForce);
+      this.steer.asSub(sum, this.velocity);
+      this.steer.limit(this.maxForce);
+      this.applyForce(this.steer);
+    }
   }
 
-  Agent.prototype.align = function(agents) {
+  Agent.prototype.bounceBorders = function() {
 
   }
 

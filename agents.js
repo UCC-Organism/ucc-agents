@@ -79,8 +79,10 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
         agent.maxSpeed = bboxSize.x/5; //fly through whole bounding box in 5s
         agent.maxForce = bboxSize.x/5; //achieve max speed in 1s
         agent.desiredSeparation = this.agentSeparation;
-        agent.position = MathUtils.randomVec3();
+        agent.alignmentDistance = this.agentSeparation * 5;
+        agent.position = MathUtils.randomVec3().scale(50);
         agent.velocity = new Vec3(agent.maxSpeed, 0, 0);
+        agent.velocity = MathUtils.randomVec3().scale(agent.maxSpeed);
         agent.offset = MathUtils.randomVec3().scale(5);
         agent.target = MathUtils.randomVec3InBoundingBox(this.boundingBox);
         agent.rotation = new Quat();
@@ -131,6 +133,7 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
         agent.desiredSeparation = this.agentSeparation;
         agent.seek(agent.target);
         agent.separate(this.agents);
+        agent.align(this.agents);
         agent.update();
         agent.rotation.setQuat(GeomUtils.quatFromDirection(agent.velocity));
       }.bind(this));
