@@ -68,7 +68,7 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
         var agent = new Agent(this.boundingBox);
         agent.maxSpeed = bboxSize.x/5; //fly through whole bounding box in 5s
         agent.maxForce = bboxSize.x/5; //achieve max speed in 1s
-        agent.desiredSeparation = avatarSize * 10;
+        agent.desiredSeparation = avatarSize * 2;
         agent.position = MathUtils.randomVec3();
         agent.velocity = new Vec3(agent.maxSpeed, 0, 0);
         agent.offset = MathUtils.randomVec3().scale(5);
