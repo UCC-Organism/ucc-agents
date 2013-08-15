@@ -7,9 +7,11 @@ var Arcball = pex.scene.Arcball;
 var Cube = pex.geom.gen.Cube;
 var hem = pex.geom.hem;
 var Color = pex.color.Color;
+var Vec2 = pex.geom.Vec2;
+var Vec3 = pex.geom.Vec3;
+var Vec4 = pex.geom.Vec4;
 var Mat4 = pex.geom.Mat4;
 var Quat = pex.geom.Quat;
-var Vec3 = pex.geom.Vec3;
 var Time = pex.utils.Time;
 var BoundingBox = pex.geom.BoundingBox;
 var GUI = pex.gui.GUI;
@@ -114,9 +116,15 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
       timeline.Timeline.getGlobalInstance().update();
       TWEEN.update();
 
+      if (Time.frameNumber % 30 == 0) {
+        console.log('Vec2:' + Vec2.count + ' Vec3:' + Vec3.count + ' Vec4:' + Vec4.count + ' Mat4:' + Mat4.count + ' Quat:' + Quat.count)
+        Vec2.count = Vec3.count = Vec4.count = Mat4.count = Quat.count = 0;
+      }
+
       this.glx.clearColorAndDepth(Color.Black).enableDepthWriteAndRead().cullFace(false);
 
       this.agents.forEach(function(agent, i) {
+        agent.desiredSeparation = this.agentSeparation;
         agent.seek(agent.target);
         agent.separate(this.agents);
         agent.update();
