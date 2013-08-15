@@ -38,6 +38,7 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
     test: 0,
     target: new Vec3(0, 0, 0),
     agentSeparation: 0,
+    agentAlignment: true,
     init: function() {
       Time.verbose = true;
 
@@ -71,8 +72,10 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
       bottom.chain(center);
 
       this.agentSeparation = avatarSize * 2;
+      this.agentAlignment = this.agentSeparation * 5;
       this.gui.addLabel('Agents');
       this.gui.addParam('Separation', this, 'agentSeparation', {min:0, max:avatarSize*15});
+      this.gui.addParam('Alignmnent', this, 'agentAlignment', {min:0, max:avatarSize*15});
 
       console.log(this.agentSeparation * 5);
 
@@ -81,7 +84,7 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
         agent.maxSpeed = bboxSize.x/5; //fly through whole bounding box in 5s
         agent.maxForce = bboxSize.x/5; //achieve max speed in 1s
         agent.desiredSeparation = this.agentSeparation;
-        agent.alignmentDistance = this.agentSeparation * 5;
+        agent.alignmentDistance = this.agentAlignment;
         agent.targetRadius = this.agentSeparation * 4;
         agent.position = MathUtils.randomVec3().scale(50);
         agent.velocity = new Vec3(agent.maxSpeed, 0, 0);
@@ -134,6 +137,7 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
 
       this.agents.forEach(function(agent, i) {
         agent.desiredSeparation = this.agentSeparation;
+        agent.alignmentDistance = this.agentAlignment;
         agent.seek(agent.target);
         agent.separate(this.agents);
         agent.align(this.agents);
