@@ -31,7 +31,7 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
       fullscreen: Platform.isBrowser,
       center: true
     },
-    numAgents: 150,
+    numAgents: 120,
     agents: [],
     agentSpreadRadius: 15,
     mouseDown: false,
@@ -63,6 +63,32 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
       this.boundingBoxHelper = new BoundingBoxHelper(this.boundingBox);
       var avatarSize = bboxSize.x/150;
 
+      this.groups = [];
+      this.groups.push({
+        agents: [],
+        startingPos: new Vec3(this.boundingBox.min.x, 0, 0),
+        target: new Vec3(0, 0, 0),
+        color: Color.Red
+      });
+      this.groups.push({
+        agents: [],
+        startingPos: new Vec3(this.boundingBox.max.x, 0, 0),
+        target: new Vec3(0, 0, 0),
+        color: Color.Green
+      });
+      this.groups.push({
+        agents: [],
+        startingPos: new Vec3(0, this.boundingBox.min.y, 0),
+        target: new Vec3(0, 0, 0),
+        color: Color.Blue
+      });
+      this.groups.push({
+        agents: [],
+        startingPos: new Vec3(0, this.boundingBox.max.y, 0),
+        target: new Vec3(0, 0, 0),
+        color: Color.Pink
+      });
+
       var center = new TWEEN.Tween(this.target).to({x:bboxSize.x/2, y:0, z:0}, 5000).delay(0).start().onUpdate(updateTargets.bind(this)).onComplete(randomizeTarget.bind(this));
       var top  = new TWEEN.Tween(this.target).to({x:0, y:bboxSize.y/2, z:0}, 5000).delay(3000).onUpdate(updateTargets.bind(this)).onComplete(randomizeTarget.bind(this));
       var bottom  = new TWEEN.Tween(this.target).to({x:0, y:-bboxSize.y/2, z:0}, 5000).delay(3000).onUpdate(updateTargets.bind(this)).onComplete(randomizeTarget.bind(this));
@@ -77,23 +103,26 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
       this.gui.addParam('Separation', this, 'agentSeparation', {min:0, max:avatarSize*15});
       this.gui.addParam('Alignmnent', this, 'agentAlignment', {min:0, max:avatarSize*15});
 
-      console.log(this.agentSeparation * 5);
-
-      this.agents = FuncUtils.seq(0, this.numAgents).map(function(i) {
-        var agent = new Agent(this.boundingBox);
-        agent.maxSpeed = bboxSize.x/5; //fly through whole bounding box in 5s
-        agent.maxForce = bboxSize.x/5; //achieve max speed in 1s
-        agent.desiredSeparation = this.agentSeparation;
-        agent.alignmentDistance = this.agentAlignment;
-        agent.targetRadius = this.agentSeparation * 4;
-        agent.position = MathUtils.randomVec3().scale(50);
-        agent.velocity = new Vec3(agent.maxSpeed, 0, 0);
-        agent.velocity = MathUtils.randomVec3().scale(agent.maxSpeed);
-        agent.offset = MathUtils.randomVec3().scale(5);
-        agent.target = MathUtils.randomVec3InBoundingBox(this.boundingBox);
-        agent.rotation = new Quat();
-        return agent;
-      }.bind(this));
+      for(var j=0; j<this.groups.length; j++) {
+        var group = this.groups[j];
+        for(var i=0; i<this.numAgents/4; i++) {
+          var agent = new Agent(this.boundingBox);
+          agent.maxSpeed = bboxSize.x/5; //fly through whole bounding box in 5s
+          agent.maxForce = bboxSize.x/5; //achieve max speed in 1s
+          agent.desiredSeparation = this.agentSeparation;
+          agent.alignmentDistance = this.agentAlignment;
+          agent.targetRadius = this.agentSeparation * 4;
+          agent.position = MathUtils.randomVec3().scale(bboxSize.x/10).add(group.startingPos);
+          agent.velocity = new Vec3(agent.maxSpeed, 0, 0);
+          agent.velocity = MathUtils.randomVec3().scale(agent.maxSpeed);
+          agent.offset = MathUtils.randomVec3().scale(5);
+          agent.target = MathUtils.randomVec3InBoundingBox(this.boundingBox);
+          agent.rotation = new Quat();
+          agent.group = group;
+          this.groups[j].agents.push(agent);
+          this.agents.push(agent);
+        }
+      }
 
       this.camera = new pex.scene.PerspectiveCamera(60, this.width/this.height);
       this.arcball = new pex.scene.Arcball(this, this.camera, bboxSize.x*0.55);
@@ -110,7 +139,7 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
       GeomUtils.transformVertices(headCube, headTransform);
 
       this.agentBody = new pex.gl.Mesh(bodyCube, new pex.materials.Diffuse({diffuseColor:Color.White}));
-      this.agentHead = new pex.gl.Mesh(headCube, new pex.materials.Diffuse({diffuseColor:Color.Yellow}));
+      this.agentHead = new pex.gl.Mesh(headCube, new pex.materials.Diffuse({diffuseColor:Color.White}));
 
       this.cube = new pex.gl.Mesh(new Cube(bboxSize.x/100), new pex.materials.Diffuse({diffuseColor:Color.Green}));
 
@@ -145,8 +174,12 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
         agent.rotation.setQuat(GeomUtils.quatFromDirection(agent.velocity));
       }.bind(this));
 
-      this.agentBody.drawInstances(this.camera, this.agents);
-      this.agentHead.drawInstances(this.camera, this.agents);
+      for(var j=0; j<this.groups.length; j++) {
+        var group = this.groups[j];
+        this.agentBody.material.uniforms.diffuseColor = group.color;
+        this.agentBody.drawInstances(this.camera, group.agents);
+        this.agentHead.drawInstances(this.camera, group.agents);
+      }
 
       this.cube.position = this.target;
       this.cube.draw(this.camera);
