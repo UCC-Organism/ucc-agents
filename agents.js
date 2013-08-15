@@ -49,42 +49,49 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
         }.bind(this))
       }
 
+      var bboxCenter = new Vec3(0,0,0);
+      var bboxSize = new Vec3(100, 50, 2);
+      this.boundingBox = BoundingBox.fromPositionSize(bboxCenter, bboxSize);
+      console.log(this.boundingBox);
+      this.boundingBoxHelper = new BoundingBoxHelper(this.boundingBox);
+      var avatarSize = bboxSize.x/150;
+
       //anim(this).to({test:1}, 5)
-      var center = new TWEEN.Tween(this.target).to({x:30/2, y:0, z:0}, 5000).delay(0).start().onUpdate(updateTargets.bind(this)).onComplete(randomizeTarget.bind(this));
-      var top  = new TWEEN.Tween(this.target).to({x:0, y:15/2, z:0}, 5000).delay(3000).onUpdate(updateTargets.bind(this)).onComplete(randomizeTarget.bind(this));
-      var bottom  = new TWEEN.Tween(this.target).to({x:0, y:-15/2, z:0}, 5000).delay(3000).onUpdate(updateTargets.bind(this)).onComplete(randomizeTarget.bind(this));
+      var center = new TWEEN.Tween(this.target).to({x:bboxSize.x/2, y:0, z:0}, 5000).delay(0).start().onUpdate(updateTargets.bind(this)).onComplete(randomizeTarget.bind(this));
+      var top  = new TWEEN.Tween(this.target).to({x:0, y:bboxSize.y/2, z:0}, 5000).delay(3000).onUpdate(updateTargets.bind(this)).onComplete(randomizeTarget.bind(this));
+      var bottom  = new TWEEN.Tween(this.target).to({x:0, y:-bboxSize.y/2, z:0}, 5000).delay(3000).onUpdate(updateTargets.bind(this)).onComplete(randomizeTarget.bind(this));
 
       center.chain(top);
       top.chain(bottom);
       bottom.chain(center);
 
-      this.boundingBox = BoundingBox.fromPositionSize(new Vec3(0,0,0), new Vec3(30,15,2));
-      console.log(this.boundingBox);
-      this.boundingBoxHelper = new BoundingBoxHelper(this.boundingBox);
-
       this.agents = FuncUtils.seq(0, this.numAgents).map(function(i) {
         var agent = new Agent(this.boundingBox);
+        agent.maxSpeed = bboxSize.x/5; //fly through whole bounding box in 5s
+        agent.maxForce = bboxSize.x/5; //achieve max speed in 1s
+        agent.desiredSeparation = avatarSize * 10;
         agent.position = MathUtils.randomVec3();
+        agent.velocity = new Vec3(agent.maxSpeed, 0, 0);
         agent.offset = MathUtils.randomVec3().scale(5);
         agent.target = MathUtils.randomVec3InBoundingBox(this.boundingBox);
         return agent;
       }.bind(this));
 
       this.camera = new pex.scene.PerspectiveCamera(60, this.width/this.height);
-      this.arcball = new pex.scene.Arcball(this, this.camera, 17);
+      this.arcball = new pex.scene.Arcball(this, this.camera, bboxSize.x*0.55);
       this.arcball.target = new Vec3(0,0,0);
       this.arcball.updateCamera();
       this.framerate(30);
 
-      var bodyCube = new Cube(0.2, 0.2, 0.4*0+0.2);
-      var headCube = new Cube(0.21, 0.21, 0.21);
-      var headTransform = new Mat4().translate(0, 0.0, 0.3*0);
+      var bodyCube = new Cube(avatarSize, avatarSize, avatarSize * 2);
+      var headCube = new Cube(avatarSize*1.05, avatarSize*1.05, avatarSize*1.05);
+      var headTransform = new Mat4().translate(0, 0.0, avatarSize*1.5);
       GeomUtils.transformVertices(headCube, headTransform);
 
       this.agentBody = new pex.gl.Mesh(bodyCube, new pex.materials.Diffuse({diffuseColor:Color.White}));
       this.agentHead = new pex.gl.Mesh(headCube, new pex.materials.Diffuse({diffuseColor:Color.Yellow}));
 
-      this.cube = new pex.gl.Mesh(new Cube(0.1), new pex.materials.Diffuse({diffuseColor:Color.Green}));
+      this.cube = new pex.gl.Mesh(new Cube(bboxSize.x/100), new pex.materials.Diffuse({diffuseColor:Color.Green}));
 
       this.glx = new GLX();
       this.glx.clearColorAndDepth(Color.Black).enableDepthWriteAndRead().cullFace(false)
@@ -103,7 +110,6 @@ pex.require(['utils/FuncUtils', 'utils/GLX', 'utils/GeomUtils', 'sim/Agent', 'he
      this.glx.clearColorAndDepth(Color.Black).enableDepthWriteAndRead().cullFace(false);
 
      this.agents.forEach(function(agent, i) {
-        //agent.target = this.target;
         agent.seek(agent.target);
         agent.separate(this.agents);
         agent.update();
